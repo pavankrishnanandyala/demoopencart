@@ -7,8 +7,7 @@ import pytest
 
 
 class test_userregistration:
-    @allure.feature('verify log')
-    @allure.story('verify log')
+
     def test_verifylog(self, setup):
         self.driver = setup
         self.driver.get("https://demo-opencart.com/index.php?route=common/home&language=en-gb")
@@ -25,8 +24,6 @@ class test_userregistration:
             self.driver.close()
             assert False
 
-    @allure.feature('User Registration')
-    @allure.story('User Registration')
     def test_registration(self, setup):
         self.driver = setup
         self.driver.get("https://demo-opencart.com/index.php?route=common/home&language=en-gb")
