@@ -1,42 +1,60 @@
-#import Service
 import pytest
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 
 @pytest.fixture()
-def setup(self, browser):
+def setup(browser):
+    """Fixture to initialize WebDriver based on browser selection"""
     if browser == "chrome":
-        from selenium.webdriver.chrome.service import Service
-        serv_obj = Service("C:\browsers drivers\chromedriver_win32\chromedriver.exe")
-        driver = webdriver.Chrome(service=self.serv_obj)
+        options = ChromeOptions()
+        options.add_argument("--headless")  # Run Chrome in headless mode
+        driver = webdriver.Chrome(options=options)
     elif browser == "edge":
-        from selenium.webdriver.edge.service import Service
-        serv_obj = Service("C:\browsers drivers\edgedriver_win64\msedgedriver.exe")
-        driver = webdriver.Edge(service=self.serv_obj)
+        options = EdgeOptions()
+        options.add_argument("--headless")
+        driver = webdriver.Edge(options=options)
     elif browser == "firefox":
-        from selenium.webdriver.firefox.service import Service
-        serv_obj = Service("C:\browsers drivers\geckodriver-v0.34.0-win64\geckodriver.exe")
-        driver = webdriver.Firefox(service=self.serv_obj)
-    return driver
+        options = FirefoxOptions()
+        options.add_argument("--headless")
+        driver = webdriver.Firefox(options=options)
+    else:
+        raise ValueError(f"Unsupported browser: {browser}")
+
+    yield driver
+    driver.quit()  # Ensure the browser is closed after the test
 
 
-def pytest_addoption(parser):  # This will get the value from CLI
-    parser.addoption("--browser")
+def pytest_addoption(parser):
+    """Allows passing browser choice via command line"""
+    parser.addoption("--browser", action="store", default="chrome", help="Browser to run tests on")
 
 
 @pytest.fixture()
-def browser(request):  # This will return the Browser value to setup method
+def browser(request):
+    """Retrieves the browser value from CLI options"""
     return request.config.getoption("--browser")
 
-# customizing reHTML Report
-# It is hook for Adding Environment info to HTML Report
-#def pytest_configure(config):
-#config._metadata['Project Name'] = 'open cart'
-#config._metadata['Module Name'] = 'Register Module'
-#config._metadata['Tester Name'] = 'Pavan'
 
-# It is hook for delete/Modify Environment info to HTML Report
-#@pytest.mark.optionalhook
-#def pytest_metadata(metadata):
-#metadata.pop("JAVA_HOME", None)
-#metadata.pop("Plugins", None)
+# Customizing HTML Report
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    """Hook to add extra metadata to the HTML report"""
+    config._metadata["Project Name"] = "Open Cart"
+    config._metadata["Module Name"] = "Register Module"
+    config._metadata["Tester Name"] = "Pavan"
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_metadata(metadata):
+    """Hook to remove unnecessary metadata from HTML report"""
+    metadata.pop("JAVA_HOME", None)
+    metadata.pop("Plugins", None)
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    if not hasattr(config, 'slaveinput'):
+        import allure_pytest
+        config.pluginmanager.register(allure_pytest.AllurePlugin())
